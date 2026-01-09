@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Smart Society Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>🏢 Smart Society</h1>
+                <p>Management System</p>
+            </div>
+
+            <div class="role-selector">
+                <button class="role-btn active" onclick="selectRole('admin')">
+                    <span class="role-icon">👨‍💼</span>
+                    <span>Admin Login</span>
+                </button>
+                <button class="role-btn" onclick="selectRole('resident')">
+                    <span class="role-icon">👤</span>
+                    <span>Resident Login</span>
+                </button>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="username" placeholder="Enter username" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="Enter password" required>
+                </div>
+
+                <div id="errorMsg" class="error-msg"></div>
+
+                <button type="submit" class="login-btn">
+                    <span>Login</span>
+                </button>
+            </form>
+    </div>
+</div>
+
+    <script>
+        let selectedRole = 'admin';
+
+        function selectRole(role) {
+            selectedRole = role;
+            const buttons = document.querySelectorAll('.role-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.closest('.role-btn').classList.add('active');
+
+            // Clear form
+            document.getElementById('loginForm').reset();
+            document.getElementById('errorMsg').textContent = '';
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Redirect based on role
+                    if (data.role === 'admin') {
+                        window.location.href = '/admin/dashboard';
+                    } else {
+                        window.location.href = '/resident/dashboard';
+                    }
+                } else {
+                    errorMsg.textContent = data.message;
+                }
+            } catch (error) {
+                errorMsg.textContent = 'Login failed. Please try again.';
+            }
+        }
+    </script>
+</body>
+</html>
