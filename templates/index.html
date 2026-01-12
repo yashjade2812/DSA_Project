@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Smart Society Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏢 Smart Society Management</h1>
+            <p>DSA-Powered Apartment Management System</p>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="nav-tabs">
+            <a href="/" class="nav-tab active">📊 Dashboard</a>
+            <a href="/residents" class="nav-tab">👥 Residents</a>
+            <a href="/visitors" class="nav-tab">🚪 Visitors</a>
+            <a href="/complaints" class="nav-tab">⚠️ Complaints</a>
+            <a href="/bills" class="nav-tab">💰 Billing</a>
+        </nav>
+
+        <!-- Dashboard Stats -->
+        <div class="main-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value" id="totalResidents">{{ stats.total_residents }}</div>
+                <div class="stat-label">Total Residents</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🚪</div>
+                <div class="stat-value" id="totalVisitors">{{ stats.total_visitors }}</div>
+                <div class="stat-label">Visitors in Queue</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-value" id="activeComplaints">{{ stats.active_complaints }}</div>
+                <div class="stat-label">Active Complaints</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value">₹{{ stats.total_billing }}</div>
+                <div class="stat-label">Total Billing</div>
+            </div>
+        </div>
+
+        <!-- DSA Info Cards -->
+        <div class="glass-card" style="margin-top: 2rem;">
+            <h2 style="color: white; margin-bottom: 1rem;">🧠 Integrated Data Structures</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                <div class="dsa-info-card">
+                    <h3>📝 Linked List</h3>
+                    <p>Dynamic resident management</p>
+                    <span class="complexity">O(n) insert/delete</span>
+                </div>
+                <div class="dsa-info-card">
+                    <h3>🎯 Queue (FIFO)</h3>
+                    <p>Visitor entry processing</p>
+                    <span class="complexity">O(1) enqueue/dequeue</span>
+                </div>
+                <div class="dsa-info-card">
+                    <h3>🔝 Min Heap</h3>
+                    <p>Priority-based complaints</p>
+                    <span class="complexity">O(log n) operations</span>
+                </div>
+                <div class="dsa-info-card">
+                    <h3>⏮️ Stack (LIFO)</h3>
+                    <p>Billing undo feature</p>
+                    <span class="complexity">O(1) push/pop</span>
+                </div>
+                <div class="dsa-info-card">
+                    <h3>🌐 Graph</h3>
+                    <p>Facility connections</p>
+                    <span class="complexity">O(1) adjacency list</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
