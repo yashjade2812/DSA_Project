@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Residents - Admin Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🏢 Smart Society</h2>
+                <p>Admin Panel</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/dashboard"><span class="menu-icon">📊</span> Dashboard</a></li>
+                <li><a href="/admin/residents" class="active"><span class="menu-icon">👥</span> Residents</a></li>
+                <li><a href="/admin/visitors"><span class="menu-icon">🚪</span> Visitors</a></li>
+                <li><a href="/admin/complaints"><span class="menu-icon">⚠️</span> Complaints</a></li>
+                <li><a href="/admin/bills"><span class="menu-icon">💰</span> Billing</a></li>
+            </ul>
+            <a href="/logout" class="logout-btn">🚪 Logout</a>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>Resident Management</h1>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">👨‍💼</div>
+                    <div class="user-details">
+                        <strong>{{ user }}</strong>
+                        <span>Administrator</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div id="alertContainer"></div>
+
+                <div class="card-header">
+                    <h2>Add New Resident</h2>
+                </div>
+
+                <form id="residentForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-input" id="name" placeholder="John Doe" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Flat Number</label>
+                            <input type="text" class="form-input" id="flat" placeholder="A-101" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-input" id="phone" placeholder="+91 98765 43210" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-input" id="email" placeholder="john@example.com" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">➕ Add Resident</button>
+                </form>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>Search & Sort Operations</h2>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="sortResidents('name')">🔤 Sort by Name</button>
+                    <button class="btn btn-primary" onclick="sortResidents('flat')">🏠 Sort by Flat</button>
+                    <button class="btn btn-primary" onclick="sortResidents('bills')">💰 Sort by Bills</button>
+                    <button class="btn btn-primary" onclick="loadResidents()">🔄 Reset</button>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>All Residents</h2>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Flat</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="residentList">
+                            <tr><td colspan="5" style="text-align: center;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        async function loadResidents() {
+            try {
+                const response = await fetch(`${API_BASE}/residents`);
+                const data = await response.json();
+                displayResidents(data.data);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function sortResidents(by) {
+            try {
+                const response = await fetch(`${API_BASE}/residents/sort?by=${by}`);
+                const data = await response.json();
+                displayResidents(data.data);
+                showAlert(`Sorted by ${by} using Quick Sort!`, 'success');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function displayResidents(residents) {
+            const tbody = document.getElementById('residentList');
+            if (residents.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No residents found</td></tr>';
+                return;
+            }
+            tbody.innerHTML = residents.map(r => `
+                <tr>
+                    <td>${r.name}</td>
+                    <td>${r.flat}</td>
+                    <td>${r.phone}</td>
+                    <td>${r.email}</td>
+                    <td><button class="btn btn-danger btn-small" onclick="deleteResident('${r.flat}')">🗑️ Delete</button></td>
+                </tr>
+            `).join('');
+        }
+
+        document.getElementById('residentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const residentData = {
+                name: document.getElementById('name').value,
+                flat: document.getElementById('flat').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/residents`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(residentData)
+                });
+                const data = await response.json();
+                showAlert(data.message, 'success');
+                document.getElementById('residentForm').reset();
+                loadResidents();
+            } catch (error) {
+                showAlert('Error adding resident', 'error');
+            }
+        });
+
+        async function deleteResident(flatNumber) {
+            if (!confirm(`Delete resident from flat ${flatNumber}?`)) return;
+            try {
+                const response = await fetch(`${API_BASE}/residents/${flatNumber}`, { method: 'DELETE' });
+                const data = await response.json();
+                showAlert(data.message, data.success ? 'success' : 'error');
+                if (data.success) loadResidents();
+            } catch (error) {
+                showAlert('Error deleting resident', 'error');
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alertContainer');
+            alertDiv.innerHTML = `<div class="alert alert-${type} show">${message}</div>`;
+            setTimeout(() => alertDiv.innerHTML = '', 3000);
+        }
+
+        loadResidents();
+    </script>
+</body>
+</html>
