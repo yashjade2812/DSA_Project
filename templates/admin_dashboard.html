@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Smart Society</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🏢 Smart Society</h2>
+                <p>Admin Panel</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/dashboard" class="active"><span class="menu-icon">📊</span> Dashboard</a></li>
+                <li><a href="/admin/residents"><span class="menu-icon">👥</span> Residents</a></li>
+                <li><a href="/admin/visitors"><span class="menu-icon">🚪</span> Visitors</a></li>
+                <li><a href="/admin/complaints"><span class="menu-icon">⚠️</span> Complaints</a></li>
+                <li><a href="/admin/bills"><span class="menu-icon">💰</span> Billing</a></li>
+            </ul>
+            <a href="/logout" class="logout-btn" style="text-decoration: none;">🚪 Logout</a>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>Dashboard</h1>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">👨‍💼</div>
+                    <div class="user-details">
+                        <strong>{{ user }}</strong>
+                        <span>Administrator</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">👥</div>
+                    </div>
+                    <div class="stat-value">{{ stats.total_residents }}</div>
+                    <div class="stat-label">Total Residents</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">🚪</div>
+                    </div>
+                    <div class="stat-value">{{ stats.total_visitors }}</div>
+                    <div class="stat-label">Visitors in Queue</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">⚠️</div>
+                    </div>
+                    <div class="stat-value">{{ stats.active_complaints }}</div>
+                    <div class="stat-label">Active Complaints</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">💰</div>
+                    </div>
+                    <div class="stat-value">₹{{ stats.total_billing }}</div>
+                    <div class="stat-label">Total Billing</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">🏢</div>
+                    </div>
+                    <div class="stat-value">{{ stats.total_flats }}</div>
+                    <div class="stat-label">Total Flats</div>
+                </div>
+            </div>
+
+            <!-- Facilities (Graph) -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>🌐 Facilities Graph</h2>
+                    <p>Facilities are nodes; direct access between them are edges.</p>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem;">
+                    <div style="backdrop-filter: blur(12px); background: rgba(255,255,255,0.1); padding: 1.25rem; border-radius: 16px;">
+                        <h3 style="color: white; margin-bottom: 0.75rem;">Facilities (Nodes)</h3>
+                        <ul id="facilitiesList" style="list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem;"></ul>
+                    </div>
+                    <div style="backdrop-filter: blur(12px); background: rgba(255,255,255,0.1); padding: 1.25rem; border-radius: 16px;">
+                        <h3 style="color: white; margin-bottom: 0.75rem;">Connections (Edges)</h3>
+                        <div id="connectionsList" style="display: grid; gap: 0.5rem;"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        async function loadFacilities() {
+            try {
+                const res = await fetch('/api/facilities');
+                const json = await res.json();
+                if (!json.success) return;
+
+                const { facilities, connections } = json.data;
+
+                const facilitiesList = document.getElementById('facilitiesList');
+                facilitiesList.innerHTML = facilities.map(f => `
+                    <li style="color: rgba(255,255,255,0.95); background: rgba(255,255,255,0.12); padding: 0.6rem 0.8rem; border-radius: 12px;">
+                        ${f}
+                    </li>
+                `).join('');
+
+                const connectionsList = document.getElementById('connectionsList');
+                connectionsList.innerHTML = facilities.map(f => {
+                    const neighbors = connections[f] || [];
+                    const pills = neighbors.map(n => `<span style="display:inline-block; background: rgba(255,255,255,0.18); color: white; padding: 0.25rem 0.6rem; border-radius: 999px; margin-right: 0.35rem; margin-top: 0.35rem; font-size: 0.9rem;">${n}</span>`).join('');
+                    return `
+                        <div style="background: rgba(255,255,255,0.1); border-radius: 12px; padding: 0.8rem 0.9rem;">
+                            <div style="color: rgba(255,255,255,0.95); font-weight: 600; margin-bottom: 0.45rem;">${f}</div>
+                            <div>${pills || '<span style=\"color: rgba(255,255,255,0.7);\">No direct connections</span>'}</div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                // Silent fail in UI; avoid console noise in production
+            }
+        }
+
+        // Load on dashboard view
+        loadFacilities();
+    </script>
+</body>
+</html>
