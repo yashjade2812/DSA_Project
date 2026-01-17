@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing - Admin Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🏢 Smart Society</h2>
+                <p>Admin Panel</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/dashboard"><span class="menu-icon">📊</span> Dashboard</a></li>
+                <li><a href="/admin/residents"><span class="menu-icon">👥</span> Residents</a></li>
+                <li><a href="/admin/visitors"><span class="menu-icon">🚪</span> Visitors</a></li>
+                <li><a href="/admin/complaints"><span class="menu-icon">⚠️</span> Complaints</a></li>
+                <li><a href="/admin/bills" class="active"><span class="menu-icon">💰</span> Billing</a></li>
+            </ul>
+            <a href="/logout" class="logout-btn">🚪 Logout</a>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>Billing System</h1>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">👨‍💼</div>
+                    <div class="user-details">
+                        <strong>{{ user }}</strong>
+                        <span>Administrator</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div id="alertContainer"></div>
+
+                <div class="card-header">
+                    <h2>Add New Bill</h2>
+                </div>
+
+                <form id="billingForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Flat Number</label>
+                            <input type="text" class="form-input" id="flat" placeholder="A-101" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Amount (₹)</label>
+                            <input type="number" class="form-input" id="amount" placeholder="5000" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Description</label>
+                            <input type="text" class="form-input" id="desc" placeholder="Monthly Maintenance" required>
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-primary">💵 Add Bill</button>
+                        <button type="button" class="btn btn-danger" id="undoBtn">↩️ Undo Last Bill</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>Billing History</h2>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Flat</th>
+                                <th>Amount</th>
+                                <th>Description</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="billingList">
+                            <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        async function loadBills() {
+            try {
+                const response = await fetch(`${API_BASE}/bills`);
+                const data = await response.json();
+                
+                const tbody = document.getElementById('billingList');
+                if (data.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No bills found</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = data.data.map(bill => `
+                    <tr>
+                        <td>${bill.flat}</td>
+                        <td>₹${bill.amount.toLocaleString()}</td>
+                        <td>${bill.desc}</td>
+                        <td>${bill.date}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        document.getElementById('billingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const billData = {
+                flat: document.getElementById('flat').value,
+                amount: document.getElementById('amount').value,
+                desc: document.getElementById('desc').value
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/bills`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(billData)
+                });
+                
+                const data = await response.json();
+                showAlert(data.message, 'success');
+                document.getElementById('billingForm').reset();
+                loadBills();
+            } catch (error) {
+                showAlert('Error adding bill', 'error');
+            }
+        });
+
+        document.getElementById('undoBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_BASE}/bills/undo`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    showAlert(`Undone: ₹${data.data.amount} bill for ${data.data.flat}`, 'success');
+                    loadBills();
+                } else {
+                    showAlert(data.message, 'error');
+                }
+            } catch (error) {
+                showAlert('Error undoing bill', 'error');
+            }
+        });
+
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alertContainer');
+            alertDiv.innerHTML = `<div class="alert alert-${type} show">${message}</div>`;
+            setTimeout(() => alertDiv.innerHTML = '', 3000);
+        }
+
+        loadBills();
+    </script>
+</body>
+</html>
