@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resident Dashboard - Smart Society</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🏢 Smart Society</h2>
+                <p>Resident Portal</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/resident/dashboard" class="active"><span class="menu-icon">📊</span> Dashboard</a></li>
+                <li><a href="/resident/complaints"><span class="menu-icon">⚠️</span> My Complaints</a></li>
+                <li><a href="/resident/bills"><span class="menu-icon">💰</span> My Bills</a></li>
+                <li><a href="/resident/visitors"><span class="menu-icon">🚪</span> Register Visitor</a></li>
+            </ul>
+            <a href="/logout" class="logout-btn">🚪 Logout</a>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>Welcome, {{ user }}!</h1>
+                    <p>Your personal dashboard</p>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">👤</div>
+                    <div class="user-details">
+                        <strong>{{ user }}</strong>
+                        <span>Flat {{ stats.flat_number }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">🏠</div>
+                    </div>
+                    <div class="stat-value">{{ stats.flat_number }}</div>
+                    <div class="stat-label">Your Flat</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">💰</div>
+                    </div>
+                    <div class="stat-value">{{ stats.pending_bills }}</div>
+                    <div class="stat-label">Pending Bills</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">⚠️</div>
+                    </div>
+                    <div class="stat-value">{{ stats.active_complaints }}</div>
+                    <div class="stat-label">Active Complaints</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon">🚪</div>
+                    </div>
+                    <div class="stat-value">{{ stats.visitors_today }}</div>
+                    <div class="stat-label">Visitors Today</div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>Quick Actions</h2>
+                    <p>Commonly used features</p>
+                </div>
+                <div class="btn-group">
+                    <a href="/resident/complaints" class="btn btn-primary">📝 Submit Complaint</a>
+                    <a href="/resident/visitors" class="btn btn-primary">🚪 Register Visitor</a>
+                    <a href="/resident/bills" class="btn btn-primary">💰 View Bills</a>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>🏢 Society Information</h2>
+                </div>
+                <div style="color: rgba(255,255,255,0.9); line-height: 1.8;">
+                    <p><strong>Society Name:</strong> Green Valley Apartments</p>
+                    <p><strong>Your Flat:</strong> {{ stats.flat_number }}</p>
+                    <p><strong>Maintenance Fee:</strong> ₹5,000/month</p>
+                    <p><strong>Emergency Contact:</strong> +91 98765 00000</p>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
