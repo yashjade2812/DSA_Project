@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complaints - Admin Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🏢 Smart Society</h2>
+                <p>Admin Panel</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/dashboard"><span class="menu-icon">📊</span> Dashboard</a></li>
+                <li><a href="/admin/residents"><span class="menu-icon">👥</span> Residents</a></li>
+                <li><a href="/admin/visitors"><span class="menu-icon">🚪</span> Visitors</a></li>
+                <li><a href="/admin/complaints" class="active"><span class="menu-icon">⚠️</span> Complaints</a></li>
+                <li><a href="/admin/bills"><span class="menu-icon">💰</span> Billing</a></li>
+            </ul>
+            <a href="/logout" class="logout-btn">🚪 Logout</a>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>Complaint Management</h1>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">👨‍💼</div>
+                    <div class="user-details">
+                        <strong>{{ user }}</strong>
+                        <span>Administrator</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div id="alertContainer"></div>
+
+                <div class="card-header">
+                    <h2>Submit Complaint</h2>
+                </div>
+
+                <form id="complaintForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Complaint Title</label>
+                            <input type="text" class="form-input" id="title" placeholder="Water Leakage" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Flat Number</label>
+                            <input type="text" class="form-input" id="flat" placeholder="A-101" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Priority Level</label>
+                            <select class="form-input" id="priority" required>
+                                <option value="1">🔴 High (1) - Urgent</option>
+                                <option value="2" selected>🟡 Medium (2) - Normal</option>
+                                <option value="3">🟢 Low (3) - Minor</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Description</label>
+                            <input type="text" class="form-input" id="desc" placeholder="Brief description..." required>
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-primary">📝 Submit Complaint</button>
+                        <button type="button" class="btn btn-danger" id="resolveBtn">✅ Resolve Top Priority (Extract Min)</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>Active Complaints</h2>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Flat</th>
+                                <th>Priority</th>
+                                <th>Description</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="complaintList">
+                            <tr><td colspan="5" style="text-align: center;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        async function loadComplaints() {
+            try {
+                const response = await fetch(`${API_BASE}/complaints`);
+                const data = await response.json();
+                
+                const tbody = document.getElementById('complaintList');
+                if (data.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No complaints found</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = data.data.map(c => {
+                    const priorityClass = c.priority === 1 ? 'badge-high' : c.priority === 2 ? 'badge-medium' : 'badge-low';
+                    const priorityText = c.priority === 1 ? '🔴 High' : c.priority === 2 ? '🟡 Medium' : '🟢 Low';
+                    
+                    return `
+                        <tr>
+                            <td>${c.title}</td>
+                            <td>${c.flat}</td>
+                            <td><span class="badge ${priorityClass}">${priorityText}</span></td>
+                            <td>${c.desc}</td>
+                            <td>${c.time}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        document.getElementById('complaintForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const complaintData = {
+                title: document.getElementById('title').value,
+                flat: document.getElementById('flat').value,
+                priority: document.getElementById('priority').value,
+                desc: document.getElementById('desc').value
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/complaints`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(complaintData)
+                });
+                
+                const data = await response.json();
+                showAlert(data.message, 'success');
+                document.getElementById('complaintForm').reset();
+                loadComplaints();
+            } catch (error) {
+                showAlert('Error submitting complaint', 'error');
+            }
+        });
+
+        document.getElementById('resolveBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_BASE}/complaints/resolve`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    showAlert(`Resolved: ${data.data.title} (Priority ${data.data.priority})`, 'success');
+                    loadComplaints();
+                } else {
+                    showAlert(data.message, 'error');
+                }
+            } catch (error) {
+                showAlert('Error resolving complaint', 'error');
+            }
+        });
+
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alertContainer');
+            alertDiv.innerHTML = `<div class="alert alert-${type} show">${message}</div>`;
+            setTimeout(() => alertDiv.innerHTML = '', 3000);
+        }
+
+        loadComplaints();
+    </script>
+</body>
+</html>
