@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visitors - Admin Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🏢 Smart Society</h2>
+                <p>Admin Panel</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/dashboard"><span class="menu-icon">📊</span> Dashboard</a></li>
+                <li><a href="/admin/residents"><span class="menu-icon">👥</span> Residents</a></li>
+                <li><a href="/admin/visitors" class="active"><span class="menu-icon">🚪</span> Visitors</a></li>
+                <li><a href="/admin/complaints"><span class="menu-icon">⚠️</span> Complaints</a></li>
+                <li><a href="/admin/bills"><span class="menu-icon">💰</span> Billing</a></li>
+            </ul>
+            <a href="/logout" class="logout-btn">🚪 Logout</a>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>Visitor Management</h1>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">👨‍💼</div>
+                    <div class="user-details">
+                        <strong>{{ user }}</strong>
+                        <span>Administrator</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div id="alertContainer"></div>
+
+                <div class="card-header">
+                    <h2>Register Visitor</h2>
+                </div>
+
+                <form id="visitorForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Visitor Name</label>
+                            <input type="text" class="form-input" id="name" placeholder="Guest Name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Visiting Flat</label>
+                            <input type="text" class="form-input" id="flat" placeholder="A-101" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Purpose of Visit</label>
+                            <input type="text" class="form-input" id="purpose" placeholder="Personal Visit / Delivery" required>
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-primary">➕ Add to Queue (Enqueue)</button>
+                        <button type="button" class="btn btn-danger" id="processBtn">✅ Process Entry (Dequeue)</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>Visitor Queue</h2>
+                </div>
+                <div id="visitorQueue">
+                    <p style="color: rgba(255,255,255,0.8); text-align: center;">Loading...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        async function loadVisitors() {
+            try {
+                const response = await fetch(`${API_BASE}/visitors`);
+                const data = await response.json();
+                
+                const container = document.getElementById('visitorQueue');
+                if (data.data.length === 0) {
+                    container.innerHTML = '<p style="color: rgba(255,255,255,0.8); text-align: center;">No visitors in queue</p>';
+                    return;
+                }
+                
+                container.innerHTML = data.data.map((v, index) => `
+                    <div style="backdrop-filter: blur(12px); background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+                        <div style="color: white;">
+                            <strong style="display: block; font-size: 1.1rem; margin-bottom: 0.3rem;">#${index + 1} - ${v.name}</strong>
+                            <span style="font-size: 0.9rem; color: rgba(255,255,255,0.8);">Visiting: ${v.flat} | Purpose: ${v.purpose} | Time: ${v.time}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        document.getElementById('visitorForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const visitorData = {
+                name: document.getElementById('name').value,
+                flat: document.getElementById('flat').value,
+                purpose: document.getElementById('purpose').value
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/visitors`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(visitorData)
+                });
+                
+                const data = await response.json();
+                showAlert(data.message, 'success');
+                document.getElementById('visitorForm').reset();
+                loadVisitors();
+            } catch (error) {
+                showAlert('Error adding visitor', 'error');
+            }
+        });
+
+        document.getElementById('processBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_BASE}/visitors/process`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    showAlert(`Processed: ${data.data.name} visiting ${data.data.flat}`, 'success');
+                    loadVisitors();
+                } else {
+                    showAlert(data.message, 'error');
+                }
+            } catch (error) {
+                showAlert('Error processing visitor', 'error');
+            }
+        });
+
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alertContainer');
+            alertDiv.innerHTML = `<div class="alert alert-${type} show">${message}</div>`;
+            setTimeout(() => alertDiv.innerHTML = '', 3000);
+        }
+
+        loadVisitors();
+    </script>
+</body>
+</html>
