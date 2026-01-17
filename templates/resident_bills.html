@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bills - Resident Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🏢 Smart Society</h2>
+                <p>Resident Portal</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/resident/dashboard"><span class="menu-icon">📊</span> Dashboard</a></li>
+                <li><a href="/resident/complaints"><span class="menu-icon">⚠️</span> My Complaints</a></li>
+                <li><a href="/resident/bills" class="active"><span class="menu-icon">💰</span> My Bills</a></li>
+                <li><a href="/resident/visitors"><span class="menu-icon">🚪</span> Register Visitor</a></li>
+            </ul>
+            <a href="/logout" class="logout-btn">🚪 Logout</a>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>My Billing History</h1>
+                    <p>View your bills and payment history</p>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">👤</div>
+                    <div class="user-details">
+                        <strong>{{ user }}</strong>
+                        <span>Flat {{ flat }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>Billing Summary</h2>
+                    <p>Your flat's billing information</p>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                    <div style="backdrop-filter: blur(12px); background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 16px; text-align: center;">
+                        <div style="font-size: 2rem; color: white; font-weight: 700;" id="totalAmount">₹0</div>
+                        <div style="color: rgba(255,255,255,0.8); margin-top: 0.5rem;">Total Billed</div>
+                    </div>
+                    <div style="backdrop-filter: blur(12px); background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 16px; text-align: center;">
+                        <div style="font-size: 2rem; color: white; font-weight: 700;" id="billCount">0</div>
+                        <div style="color: rgba(255,255,255,0.8); margin-top: 0.5rem;">Total Bills</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>Billing History</h2>
+                    <p>All bills for Flat {{ flat }}</p>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Amount</th>
+                                <th>Description</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="billingList">
+                            <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>💳 Payment Information</h2>
+                </div>
+                <div style="color: rgba(255,255,255,0.9); line-height: 1.8;">
+                    <p><strong>Payment Methods:</strong></p>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li>Online Transfer: Account No. 1234567890</li>
+                        <li>UPI: society@upi</li>
+                        <li>Cheque: Payable to "Green Valley Society"</li>
+                    </ul>
+                    <p style="margin-top: 1rem;"><strong>Due Date:</strong> 5th of every month</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        async function loadBills() {
+            try {
+                const response = await fetch(`${API_BASE}/bills`);
+                const data = await response.json();
+                
+                const tbody = document.getElementById('billingList');
+                if (data.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No bills found</td></tr>';
+                    return;
+                }
+                
+                // Calculate totals
+                const totalAmount = data.data.reduce((sum, bill) => sum + bill.amount, 0);
+                document.getElementById('totalAmount').textContent = `₹${totalAmount.toLocaleString()}`;
+                document.getElementById('billCount').textContent = data.data.length;
+                
+                tbody.innerHTML = data.data.map(bill => `
+                    <tr>
+                        <td>₹${bill.amount.toLocaleString()}</td>
+                        <td>${bill.desc}</td>
+                        <td>${bill.date}</td>
+                        <td><span class="badge badge-medium">Pending</span></td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        loadBills();
+    </script>
+</body>
+</html>
