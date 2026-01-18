@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Visitor - Resident Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🏢 Smart Society</h2>
+                <p>Resident Portal</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="/resident/dashboard"><span class="menu-icon">📊</span> Dashboard</a></li>
+                <li><a href="/resident/complaints"><span class="menu-icon">⚠️</span> My Complaints</a></li>
+                <li><a href="/resident/bills"><span class="menu-icon">💰</span> My Bills</a></li>
+                <li><a href="/resident/visitors" class="active"><span class="menu-icon">🚪</span> Register Visitor</a></li>
+            </ul>
+            <a href="/logout" class="logout-btn">🚪 Logout</a>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>Register Visitor</h1>
+                    <p>Pre-register visitors for faster entry</p>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">👤</div>
+                    <div class="user-details">
+                        <strong>{{ user }}</strong>
+                        <span>Flat {{ flat }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div id="alertContainer"></div>
+
+                <div class="card-header">
+                    <h2>Register Expected Visitor</h2>
+                    <p>Add visitor details for smooth gate entry</p>
+                </div>
+
+                <form id="visitorForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Visitor Name</label>
+                            <input type="text" class="form-input" id="name" placeholder="Full Name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Your Flat Number</label>
+                            <input type="text" class="form-input" id="flat" value="{{ flat }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Purpose of Visit</label>
+                            <select class="form-input" id="purpose" required>
+                                <option value="Personal Visit">Personal Visit</option>
+                                <option value="Delivery">Delivery</option>
+                                <option value="Service Provider">Service Provider (Plumber, Electrician, etc.)</option>
+                                <option value="Guest">Guest</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">🚪 Register Visitor</button>
+                </form>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>Recent Visitors</h2>
+                    <p>Your recently registered visitors</p>
+                </div>
+                <div id="visitorList">
+                    <p style="color: rgba(255,255,255,0.8); text-align: center;">Loading...</p>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2>ℹ️ Visitor Guidelines</h2>
+                </div>
+                <div style="color: rgba(255,255,255,0.9); line-height: 1.8;">
+                    <ul style="margin-left: 1.5rem;">
+                        <li>Pre-register visitors for faster security clearance</li>
+                        <li>Visitors must carry valid ID proof</li>
+                        <li>Gate entry timings: 6 AM - 10 PM</li>
+                        <li>Late-night entries require prior admin approval</li>
+                        <li>Maximum 5 visitors per day per flat</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        async function loadVisitors() {
+            try {
+                const response = await fetch(`${API_BASE}/visitors`);
+                const data = await response.json();
+                
+                const container = document.getElementById('visitorList');
+                
+                // Filter visitors for this flat
+                const myVisitors = data.data.filter(v => v.flat === '{{ flat }}');
+                
+                if (myVisitors.length === 0) {
+                    container.innerHTML = '<p style="color: rgba(255,255,255,0.8); text-align: center;">No visitors registered yet</p>';
+                    return;
+                }
+                
+                container.innerHTML = myVisitors.map((v, index) => `
+                    <div style="backdrop-filter: blur(12px); background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+                        <div style="color: white;">
+                            <strong style="display: block; font-size: 1.1rem; margin-bottom: 0.3rem;">${v.name}</strong>
+                            <span style="font-size: 0.9rem; color: rgba(255,255,255,0.8);">Purpose: ${v.purpose} | Registered: ${v.time}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        document.getElementById('visitorForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const visitorData = {
+                name: document.getElementById('name').value,
+                flat: document.getElementById('flat').value,
+                purpose: document.getElementById('purpose').value
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/visitors`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(visitorData)
+                });
+                
+                const data = await response.json();
+                showAlert(`${data.message} Visitor will be allowed entry at the gate.`, 'success');
+                document.getElementById('visitorForm').reset();
+                document.getElementById('flat').value = '{{ flat }}';
+                loadVisitors();
+            } catch (error) {
+                showAlert('Error registering visitor', 'error');
+            }
+        });
+
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alertContainer');
+            alertDiv.innerHTML = `<div class="alert alert-${type} show">${message}</div>`;
+            setTimeout(() => alertDiv.innerHTML = '', 4000);
+        }
+
+        loadVisitors();
+    </script>
+</body>
+</html>
